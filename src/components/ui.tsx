@@ -6,14 +6,17 @@ const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).jo
 // ---------------------------------------------------------------------------
 // Containers
 // ---------------------------------------------------------------------------
-export function Card({ title, subtitle, actions, children, className = '', pad = true }: {
+export function Card({ title, subtitle, actions, children, className = '', pad = true, icon: Icon, accent = false }: {
   title?: ReactNode; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; pad?: boolean
+  icon?: LucideIcon; accent?: boolean
 }) {
   return (
-    <section className={cx('rounded-xl border border-line bg-surface shadow-card', className)}>
+    <section className={cx('relative overflow-hidden rounded-xl border border-line bg-surface shadow-card', className)}>
+      {accent && <div className="accent-bar absolute inset-x-0 top-0 h-1" />}
       {(title || actions) && (
-        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-3.5">
-          <div>
+        <header className={cx('flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-3.5', accent && 'bg-primary-soft/45 pt-4.5')}>
+          {Icon && <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-ink"><Icon className="size-4" /></span>}
+          <div className="mr-auto min-w-0 flex-1">
             {title && <h3 className="text-[15px] font-semibold text-ink">{title}</h3>}
             {subtitle && <p className="mt-0.5 text-[13px] text-muted">{subtitle}</p>}
           </div>
@@ -46,7 +49,7 @@ export function Callout({ icon: Icon, tone = 'info', title, children }: {
 
 export function EmptyState({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col items-center rounded-xl border border-dashed border-line-strong bg-surface px-6 py-12 text-center">
+    <div className="flex flex-col items-center rounded-xl border border-dashed border-primary/40 px-6 py-12 text-center" style={{ background: 'radial-gradient(600px 220px at 50% 0, var(--primary-soft), var(--surface) 75%)' }}>
       <div className="mb-4 grid size-12 place-items-center rounded-full bg-primary-soft text-primary">
         <Icon className="size-6" />
       </div>
@@ -56,10 +59,18 @@ export function EmptyState({ icon: Icon, title, children }: { icon: LucideIcon; 
   )
 }
 
-export function Metric({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
+export function Metric({ label, value, sub, color, icon: Icon }: {
+  label: string; value: ReactNode; sub?: ReactNode; color?: string; icon?: LucideIcon
+}) {
+  const c = color ?? 'var(--primary)'
   return (
-    <div className="rounded-xl border border-line bg-surface px-4 py-3.5 shadow-card">
-      <div className="text-[12.5px] font-medium text-muted">{label}</div>
+    <div className="relative overflow-hidden rounded-xl border border-line bg-surface px-4 py-3.5 shadow-card"
+      style={{ backgroundImage: `linear-gradient(135deg, color-mix(in oklab, ${c} 12%, transparent), transparent 60%)` }}>
+      <div className="absolute inset-y-0 left-0 w-1" style={{ background: c }} />
+      <div className="flex items-center gap-2 text-[12.5px] font-medium text-muted">
+        {Icon && <span className="grid size-6 place-items-center rounded-md" style={{ background: `color-mix(in oklab, ${c} 18%, transparent)`, color: c }}><Icon className="size-3.5" /></span>}
+        {label}
+      </div>
       <div className="mt-1 text-[22px] font-semibold tracking-tight tabular-nums">{value}</div>
       {sub && <div className="mt-0.5 text-[12.5px] text-muted">{sub}</div>}
     </div>
@@ -107,7 +118,7 @@ export function Segmented<T extends string>({ options, value, onChange, size = '
           <button key={o.value} role="tab" aria-selected={active} onClick={() => onChange(o.value)}
             className={cx('inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-md font-medium transition-all',
               size === 'sm' ? 'min-h-7 px-2.5 py-1 text-[12.5px] leading-tight' : 'min-h-8 px-3 py-1 text-[13px] leading-tight', full && 'flex-1',
-              active ? 'bg-surface text-ink shadow-card' : 'text-ink-2 hover:text-ink')}>
+              active ? 'bg-surface text-primary shadow-card ring-1 ring-primary/30' : 'text-ink-2 hover:text-ink')}>
             {o.icon && <o.icon className="size-3.5" />}
             {o.label}
           </button>
@@ -250,7 +261,7 @@ export function Tabs<T extends string>({ tabs, value, onChange }: {
         return (
           <button key={t.value} role="tab" aria-selected={active} onClick={() => onChange(t.value)}
             className={cx('-mb-px inline-flex shrink-0 cursor-pointer items-center gap-2 border-b-2 px-3.5 py-2.5 text-[14px] font-medium transition-colors',
-              active ? 'border-primary text-ink' : 'border-transparent text-muted hover:text-ink')}>
+              active ? 'border-primary text-primary' : 'border-transparent text-muted hover:text-ink')}>
             {t.icon && <t.icon className={cx('size-4', active && 'text-primary')} />}
             {t.label}
             {t.badge}
@@ -273,9 +284,9 @@ export function DataTable<R extends Record<string, unknown>>({ columns, rows, de
     <div className="overflow-x-auto rounded-lg border border-line">
       <table className="w-full border-collapse text-[13.5px]">
         <thead>
-          <tr className="bg-surface-2">
+          <tr className="bg-primary-soft/55">
             {columns.map(c => (
-              <th key={c.key} className={cx('whitespace-nowrap border-b border-line px-3.5 py-2 text-[12.5px] font-semibold text-ink-2', c.align === 'right' ? 'text-right' : 'text-left')}>{c.label}</th>
+              <th key={c.key} className={cx('whitespace-nowrap border-b border-line px-3.5 py-2 text-[12.5px] font-semibold text-ink', c.align === 'right' ? 'text-right' : 'text-left')}>{c.label}</th>
             ))}
           </tr>
         </thead>

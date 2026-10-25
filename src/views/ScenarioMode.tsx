@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ArrowLeft, BookmarkPlus, Bookmark, Download, GitCompareArrows, Image as ImageIcon, Play, RefreshCw, SlidersHorizontal, Trash2,
+  ArrowLeft, FlaskConical, BookmarkPlus, Bookmark, Download, GitCompareArrows, Image as ImageIcon, Play, RefreshCw, SlidersHorizontal, Trash2,
 } from 'lucide-react'
 import {
   Button, Callout, Card, CheckList, DataTable, DateInput, EmptyState, Field, Legend, RadioCards, RangeSlider,
@@ -123,7 +123,7 @@ export default function ScenarioMode() {
   return (
     <div className="grid gap-6 lg:grid-cols-[310px_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-20 lg:self-start">
-        <Card title="Set up a scenario" subtitle="Simulated values only, on top of each model's fitted transmission.">
+        <Card accent icon={FlaskConical} title="Set up a scenario" subtitle="Simulated values only, on top of each model's fitted transmission.">
           <div className="space-y-5">
             <Field label="Model">
               <RadioCards name="scn-model" value={model} onChange={setModel}
@@ -282,7 +282,7 @@ function Results({ config, changed, inp, saved, onSave }: {
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-3 shadow-card sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary-soft/50 p-3 shadow-card sm:flex-row sm:items-end">
         <label className="min-w-0 flex-1">
           <span className="mb-1.5 block text-[13px] font-medium">Name for this simulation</span>
           <input value={name} onChange={e => setName(e.target.value)}
@@ -304,7 +304,7 @@ function Results({ config, changed, inp, saved, onSave }: {
             ['rule', ct.rule, 'Fitted changepoint'],
           ]} />
           {bandsBusy && <p className="text-[13px] text-muted">Integrating {N_BAND_DRAWS} posterior draws…</p>}
-          <PanelGrid>{SERIES.map(s => <ChartCard key={s}><EChart option={panel(s)} height={250} /></ChartCard>)}</PanelGrid>
+          <PanelGrid>{SERIES.map(s => <ChartCard key={s} color={seriesColor(s, mode)}><EChart option={panel(s)} height={250} /></ChartCard>)}</PanelGrid>
           {model === 'age_point' && !scn && !config.bands && (
             <p className="text-[12.5px] text-muted">Turn on <strong>95% predictive band</strong> in the setup panel for a band on these plots, from posterior draws.</p>
           )}

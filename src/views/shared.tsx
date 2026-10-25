@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { CalendarDays, HeartPulse, TrendingUp, Users } from 'lucide-react'
 import { DataTable, Field, Metric, Segmented, Select } from '../components/ui'
 import { SERIES, SERIES_COLORS, SERIES_COLORS_DARK_MODE, SERIES_LABELS, type Series } from '../lib/model'
 import { fmtDate, fmtInt, fmtNum } from '../lib/format'
@@ -11,8 +12,13 @@ export function PanelGrid({ children, cols = 2 }: { children: ReactNode; cols?: 
   )
 }
 
-export function ChartCard({ children }: { children: ReactNode }) {
-  return <div className="rounded-xl border border-line bg-surface p-3 shadow-card">{children}</div>
+export function ChartCard({ children, color }: { children: ReactNode; color?: string }) {
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-line bg-surface p-3 pt-3.5 shadow-card">
+      <div className="absolute inset-x-0 top-0 h-[3px]" style={{ background: color ?? 'var(--primary)' }} />
+      {children}
+    </div>
+  )
 }
 
 export const seriesColor = (s: Series | 'Rt', mode: 'light' | 'dark') =>
@@ -95,20 +101,20 @@ export function MetricsView({ m, intro }: { m: Metrics; intro?: ReactNode }) {
     <div className="space-y-5">
       {intro && <p className="text-[14px] text-ink-2">{intro}</p>}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Days simulated" value={m.days} />
-        <Metric label="Total confirmed cases" value={fmtInt(m.cases)} />
-        <Metric label="Total deaths" value={fmtInt(m.deaths)} />
-        <Metric label="Highest Rₜ" value={fmtNum(m.rtMax, 2)} sub={`on ${fmtDate(m.rtDay)}`} />
+        <Metric label="Days simulated" value={m.days} icon={CalendarDays} />
+        <Metric label="Total confirmed cases" value={fmtInt(m.cases)} color={SERIES_COLORS.cases} icon={Users} />
+        <Metric label="Total deaths" value={fmtInt(m.deaths)} color={SERIES_COLORS.deaths} icon={HeartPulse} />
+        <Metric label="Highest Rₜ" value={fmtNum(m.rtMax, 2)} sub={`on ${fmtDate(m.rtDay)}`} color={SERIES_COLORS.Rt} icon={TrendingUp} />
       </div>
       <div>
         <h4 className="mb-2 text-[14px] font-semibold">Peak of each series</h4>
         <DataTable
           columns={[
-            { key: 'series', label: 'Series' },
+            { key: 'series', label: 'Series', render: r => <span className="inline-flex items-center gap-2 font-medium"><span className="size-2.5 rounded-full" style={{ background: SERIES_COLORS[r.key as Series] }} />{r.series as string}</span> },
             { key: 'day', label: 'Peak day', align: 'right' },
             { key: 'value', label: 'Peak value', align: 'right' },
           ]}
-          rows={SERIES.map(s => ({ series: SERIES_LABELS[s], day: fmtDate(m.peaks[s].time), value: fmtInt(m.peaks[s].value) }))}
+          rows={SERIES.map(s => ({ key: s, series: SERIES_LABELS[s], day: fmtDate(m.peaks[s].time), value: fmtInt(m.peaks[s].value) }))}
         />
       </div>
     </div>

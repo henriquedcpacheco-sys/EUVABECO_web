@@ -42,7 +42,8 @@ export default function App() {
   return (
     <div className="min-h-screen">
       {/* Top bar */}
-      <header className="sticky top-0 z-40 border-b border-line bg-surface/85 backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-line bg-surface/80 backdrop-blur-md">
+        <div className="hero h-[3px]" />
         <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4 sm:px-6">
           <img src={`${BASE}favicon.svg`} alt="" className="size-7" />
           <div className="min-w-0 leading-tight">
@@ -70,35 +71,40 @@ export default function App() {
 
       <main className="mx-auto max-w-[1440px] px-4 pb-16 sm:px-6">
         {/* Hero */}
-        <section className="pb-6 pt-8 sm:pt-10">
-          <div className="text-[12px] font-semibold uppercase tracking-[0.12em] text-primary">Online COVID-19 simulator</div>
-          <h1 className="mt-2 text-[28px] font-bold leading-tight tracking-tight sm:text-[34px]">
-            COVID-19 Model Simulator — Portugal
-          </h1>
-          <p className="mt-3 max-w-3xl text-[15.5px] leading-relaxed text-ink-2">
-            Explore how a compartmental model fitted to Portugal's 2020 epidemic reproduces confirmed cases,
-            ward and ICU occupancy and deaths, compare model versions of increasing complexity, and test
-            counterfactual extra lockdowns and later school reopenings.
-          </p>
-          <p className="mt-3 text-[13.5px] text-muted">
-            <span className="font-semibold text-ink-2">Henrique Pacheco</span>, CEMAT · <span className="font-semibold text-ink-2">Erida Gjini</span>, CEMAT
-          </p>
+        <section className="hero relative mt-5 overflow-hidden rounded-2xl px-6 pb-20 pt-8 text-white shadow-pop sm:px-9 sm:pt-10">
+          <HeroCurves />
+          <div className="relative max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1 text-[11.5px] font-semibold uppercase tracking-[0.12em] text-white/90 ring-1 ring-white/20">
+              <span className="size-1.5 rounded-full bg-[#5be3c4]" />Online COVID-19 simulator
+            </div>
+            <h1 className="mt-3 text-[28px] font-bold leading-tight tracking-tight sm:text-[38px]">
+              COVID-19 Model Simulator — Portugal
+            </h1>
+            <p className="mt-3 text-[15.5px] leading-relaxed text-white/85">
+              Explore how a compartmental model fitted to Portugal's 2020 epidemic reproduces confirmed cases,
+              ward and ICU occupancy and deaths, compare model versions of increasing complexity, and test
+              counterfactual extra lockdowns and later school reopenings.
+            </p>
+            <p className="mt-4 text-[13.5px] text-white/75">
+              <span className="font-semibold text-white">Henrique Pacheco</span>, CEMAT · <span className="font-semibold text-white">Erida Gjini</span>, CEMAT
+            </p>
+          </div>
         </section>
 
-        {/* Mode selector */}
-        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4" role="tablist" aria-label="Simulator mode">
+        {/* Mode selector, overlapping the bottom of the hero */}
+        <div className="relative -mt-12 grid grid-cols-2 gap-2.5 px-2 sm:px-4 lg:grid-cols-4" role="tablist" aria-label="Simulator mode">
           {MODES.map(m => {
             const active = m.value === mode
             return (
-              <button key={m.value} role="tab" aria-selected={active} onClick={() => setMode(m.value)}
-                className={`group relative flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-left transition-all ${
-                  active ? 'border-primary bg-surface shadow-card ring-1 ring-primary'
-                    : 'border-line bg-surface/60 hover:border-line-strong hover:bg-surface'}`}>
-                <span className={`grid size-9 shrink-0 place-items-center rounded-lg ${active ? 'bg-primary text-primary-ink' : 'bg-surface-3 text-ink-2'}`}>
+              <button key={m.value} role="tab" aria-selected={active} onClick={() => setMode(m.value)} data-mode={m.value}
+                className={`group relative flex cursor-pointer items-start gap-3 overflow-hidden rounded-xl border bg-surface p-3.5 text-left shadow-card transition-all hover:-translate-y-0.5 hover:shadow-pop ${
+                  active ? 'border-primary ring-2 ring-primary/70' : 'border-line'}`}>
+                <span className={`absolute inset-x-0 top-0 h-1 accent-bar ${active ? '' : 'opacity-0 group-hover:opacity-100'} transition-opacity`} />
+                <span className={`grid size-9 shrink-0 place-items-center rounded-lg transition-colors ${active ? 'bg-primary text-primary-ink' : 'bg-primary-soft text-primary'}`}>
                   <m.icon className="size-4.5" />
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[11.5px] font-semibold text-muted">Mode {m.n}{m.soon && ' · soon'}</span>
+                  <span className="block text-[11.5px] font-semibold text-primary">Mode {m.n}{m.soon && ' · soon'}</span>
                   <span className="block text-[13.5px] font-semibold leading-snug">{m.title}</span>
                   <span className="mt-0.5 hidden text-[12.5px] leading-snug text-muted sm:block">{m.caption}</span>
                 </span>
@@ -107,14 +113,15 @@ export default function App() {
           })}
         </div>
 
-        <div className="mt-6">
+        <div className="mt-7" data-mode={mode}>
           {(mode === 'early' || mode === 'partial') && <FitMode key={mode} flexiblePeriod={mode === 'partial'} />}
           {mode === 'scenarios' && <ScenarioMode />}
           {mode === 'vaccination' && <VaccinationMode onPick={setMode} />}
         </div>
       </main>
 
-      <footer className="border-t border-line bg-surface">
+      <footer className="mt-4 border-t border-line bg-surface">
+        <div className="hero h-[3px]" />
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-2 px-4 py-5 text-[12.5px] text-muted sm:px-6">
           <span>
             Data: <a className="text-primary hover:underline" href="https://github.com/dssg-pt/covid19pt-data">DSSG Portugal</a>,{' '}
@@ -168,5 +175,23 @@ function TopButton({ icon: Icon, label, onClick }: { icon: typeof Info; label: s
       className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg px-2.5 text-[13.5px] font-medium text-ink-2 hover:bg-surface-2 hover:text-ink sm:px-3">
       <Icon className="size-4" /><span className="hidden sm:inline">{label}</span>
     </button>
+  )
+}
+
+/** Decorative epidemic curves in the hero, in the series colours. */
+function HeroCurves() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 800 260" preserveAspectRatio="none"
+      className="pointer-events-none absolute inset-y-0 right-0 h-full w-[70%] opacity-60 max-md:w-full max-md:opacity-25">
+      <path d="M0 230 C 120 230 150 150 200 150 S 260 225 330 225 S 470 225 540 160 S 640 40 690 60 S 760 140 800 150"
+        fill="none" stroke="#56B4E9" strokeWidth="3" strokeLinecap="round" opacity=".9" />
+      <path d="M0 240 C 140 240 170 185 220 185 S 290 235 360 235 S 500 232 570 190 S 660 95 710 100 S 770 160 800 165"
+        fill="none" stroke="#F0B23A" strokeWidth="2.5" strokeLinecap="round" opacity=".8" />
+      <path d="M0 248 C 150 248 185 205 235 205 S 300 244 380 244 S 520 240 590 215 S 680 140 730 140 S 780 185 800 190"
+        fill="none" stroke="#D98FBA" strokeWidth="2.2" strokeLinecap="round" opacity=".75" />
+      <path d="M0 254 C 160 254 200 228 250 228 S 320 252 400 252 S 540 250 610 236 S 700 190 745 186 S 785 210 800 214"
+        fill="none" stroke="#5be3c4" strokeWidth="2" strokeLinecap="round" opacity=".7" />
+      {[200, 330, 540, 690].map(x => <line key={x} x1={x} x2={x} y1="20" y2="260" stroke="white" strokeOpacity=".18" strokeDasharray="5 6" />)}
+    </svg>
   )
 }

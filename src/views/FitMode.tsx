@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import katex from 'katex'
 import {
-  ArrowLeft, ChartLine, ChevronDown, Download, FunctionSquare, Info, Lock, Play, SearchCheck, Users,
+  ArrowLeft, ChartLine, SlidersHorizontal, ChevronDown, Download, FunctionSquare, Info, Lock, Play, SearchCheck, Users,
 } from 'lucide-react'
 import {
   Button, Callout, Card, DataTable, EmptyState, Field, Legend, Md, RadioCards, RangeSlider, Segmented, Tabs,
@@ -54,7 +54,7 @@ export default function FitMode({ flexiblePeriod }: { flexiblePeriod: boolean })
   return (
     <div className="grid gap-6 lg:grid-cols-[310px_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-20 lg:self-start">
-        <Card title="Set up the fit" subtitle={flexiblePeriod ? 'Choose the period, a model and a fitting method.' : 'Whole of 2020. Choose a model and a fitting method.'}>
+        <Card accent icon={SlidersHorizontal} title="Set up the fit" subtitle={flexiblePeriod ? 'Choose the period, a model and a fitting method.' : 'Whole of 2020. Choose a model and a fitting method.'}>
           <div className="space-y-5">
             {flexiblePeriod && (
               <Field label="Period to display" hint="All models were fitted on the whole of 2020. This selects the window shown in every plot.">
@@ -129,7 +129,7 @@ function DataTab({ observed, times, start, end }: { observed: Observed; times: n
       ]} />
       <PanelGrid>
         {SERIES.map(s => (
-          <ChartCard key={s}>
+          <ChartCard key={s} color={seriesColor(s, mode)}>
             <EChart height={250} option={timePanel({
               ct, title: SERIES_LABELS[s], times, start, end,
               layers: [{ kind: 'dots', name: 'Observed', values: observed[s], color: seriesColor(s, mode) }],
@@ -424,7 +424,7 @@ function Result(p: FittedProps & { modelKey: string; sim: Record<Series, number[
             ['dot', ct.obs, 'Observed'], ['line', ct.muted, 'Model at posterior-mean parameters'],
             ['band', ct.muted, '95% credible interval'], ['band-light', ct.muted, '95% posterior predictive'], ['rule', ct.rule, 'NPI date'],
           ] : [['dot', ct.obs, 'Observed'], ['line', ct.muted, 'Fitted model'], ['rule', ct.rule, 'NPI date']]} />
-          <PanelGrid>{charts.fitPanels.map((o, i) => <ChartCard key={i}><EChart option={o} height={260} /></ChartCard>)}</PanelGrid>
+          <PanelGrid>{charts.fitPanels.map((o, i) => <ChartCard key={i} color={seriesColor(SERIES[i], mode)}><EChart option={o} height={260} /></ChartCard>)}</PanelGrid>
           <p className="text-[12.5px] text-muted">Hover a panel to read the values of each day; hover a dashed line for its intervention.</p>
           {bayes && <BandsExplainer />}
         </>}
