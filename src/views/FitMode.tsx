@@ -4,7 +4,7 @@ import {
   ArrowLeft, ChartLine, SlidersHorizontal, ChevronDown, Download, FunctionSquare, Info, Lock, Play, SearchCheck, Users,
 } from 'lucide-react'
 import {
-  Button, Callout, Card, DataTable, EmptyState, Field, Legend, Md, RadioCards, RangeSlider, Segmented, Tabs,
+  Button, Callout, Card, DataTable, EmptyState, Field, Legend, Md, RadioCards, RangeSlider, Segmented, Tabs, Toggle,
 } from '../components/ui'
 import { EChart, chartTheme, exportPng, useThemeMode, type Option } from '../components/EChart'
 import {
@@ -21,7 +21,6 @@ import {
 } from './shared'
 
 type Tab = 'data' | 'params' | 'fit'
-type Method = 'ls' | 'bayes'
 type View = 'Fit' | 'Fit quality' | 'Parameters' | 'Rₜ' | 'Epidemic metrics' | 'Overlay'
 
 const J_FORMULA = String.raw`J = \sum_{s \,\in\, \{\text{cases, ward, ICU, deaths}\}} \sum_{t} \Big(\log(y_s(t)+1) - \log(\hat{y}_s(t)+1)\Big)^2`
@@ -36,11 +35,14 @@ export default function FitMode({ flexiblePeriod }: { flexiblePeriod: boolean })
   const comparison = useData<Comparison>('comparison')
   const [period, setPeriod] = useState<[number, number]>([0, 305])
   const [model, setModel] = useState<ModelChoice | null>(null)
-  const [method, setMethod] = useState<Method | null>(null)
   const [ranKey, setRanKey] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('data')
+  const [bands, setBands] = useState(false)
+  const [view, setView] = useState<View>('Fit')
 
-  const modelKey = model && method ? (method === 'ls' ? POINT_KEY : BAYES_KEY)[model] : null
+  // The fit always runs with the least-squares point estimates; the Bayesian
+  // bands are switched on afterwards, from the results.
+  const modelKey = model ? POINT_KEY[model] : null
   const simulated = modelKey != null && ranKey === modelKey
 
   if (!observed || !comparison) return <Loading />
@@ -49,12 +51,12 @@ export default function FitMode({ flexiblePeriod }: { flexiblePeriod: boolean })
   const [p0, p1] = flexiblePeriod ? period : [0, observed.n - 1]
   const start = obsTimes[p0], end = obsTimes[p1]
 
-  const run = () => { setRanKey(modelKey); setTab('fit') }
+  const run = () => { setRanKey(modelKey); setBands(false); setTab('fit') }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[310px_minmax(0,1fr)]">
       <aside className="lg:sticky lg:top-20 lg:self-start">
-        <Card accent icon={SlidersHorizontal} title="Set up the fit" subtitle={flexiblePeriod ? 'Choose the period, a model and a fitting method.' : 'Whole of 2020. Choose a model and a fitting method.'}>
+        <Card accent icon={SlidersHorizontal} title="Set up the fit" subtitle={flexiblePeriod ? 'Choose the period and a model.' : 'Whole of 2020. Choose a model.'}>
           <div className="space-y-5">
             {flexiblePeriod && (
               <Field label="Period to display" hint="All models were fitted on the whole of 2020. This selects the window shown in every plot.">
@@ -65,16 +67,8 @@ export default function FitMode({ flexiblePeriod }: { flexiblePeriod: boolean })
               <RadioCards name="model" value={model} onChange={setModel}
                 options={(Object.keys(MODEL_OPTIONS) as ModelChoice[]).map(k => ({ value: k, label: MODEL_OPTIONS[k].name, caption: MODEL_OPTIONS[k].caption }))} />
             </Field>
-            {model && (
-              <Field label="Fitting method">
-                <RadioCards name="method" value={method} onChange={setMethod} options={[
-                  { value: 'ls', label: 'Point estimate (least squares)', caption: 'lsqnonlin finds the single parameter set that minimises J.' },
-                  { value: 'bayes', label: '95% credible bands (Bayesian MCMC)', caption: 'DRAM samples the posterior; propagated through the ODE as bands.' },
-                ]} />
-              </Field>
-            )}
             <Button variant="primary" icon={Play} className="w-full" disabled={!modelKey} onClick={run}
-              title={modelKey ? undefined : 'Pick a model and a fitting method first.'}>
+              title={modelKey ? undefined : 'Pick a model first.'}>
               Run model fitting
             </Button>
           </div>
@@ -93,7 +87,8 @@ export default function FitMode({ flexiblePeriod }: { flexiblePeriod: boolean })
           {tab === 'params' && <ParamsTab model={model} />}
           {tab === 'fit' && (
             <FittedTab model={model} modelKey={modelKey} simulated={simulated} observed={observed}
-              obsTimes={obsTimes} start={start} end={end} comparison={comparison} />
+              obsTimes={obsTimes} start={start} end={end} comparison={comparison}
+              bands={bands} setBands={setBands} view={view} setView={setView} />
           )}
         </div>
       </section>
@@ -239,6 +234,7 @@ function ModelsAtAGlance({ comparison }: { comparison: Comparison }) {
 interface FittedProps {
   model: ModelChoice | null; modelKey: string | null; simulated: boolean; observed: Observed
   obsTimes: number[]; start: number; end: number; comparison: Comparison
+  bands: boolean; setBands: (v: boolean) => void; view: View; setView: (v: View) => void
 }
 
 function FittedTab(p: FittedProps) {
@@ -249,15 +245,15 @@ function FittedTab(p: FittedProps) {
       {!p.modelKey ? (
         <>
           <EmptyState icon={ArrowLeft} title="Pick a model">
-            Choose one of the four models and a fitting method, then press <strong>Run model fitting</strong>. The table
+            Choose one of the four models, then press <strong>Run model fitting</strong>. The table
             below compares the fit error J of every model.
           </EmptyState>
           <ModelsAtAGlance comparison={p.comparison} />
         </>
       ) : !p.simulated ? (
         <EmptyState icon={Play} title="Ready to run">Press <strong>Run model fitting</strong> to see the fitted result.</EmptyState>
-      ) : p.modelKey.endsWith('bayes') ? (
-        <BayesResult {...p} modelKey={p.modelKey} />
+      ) : p.bands ? (
+        <BayesResult {...p} modelKey={BAYES_KEY[p.model!]} />
       ) : (
         <PointResult {...p} modelKey={p.modelKey} />
       )}
@@ -300,7 +296,7 @@ const VIEWS: View[] = ['Fit', 'Fit quality', 'Parameters', 'Rₜ', 'Epidemic met
 function Result(p: FittedProps & { modelKey: string; sim: Record<Series, number[]>; rt: number[]; point?: PointFit; bayes?: BayesFit }) {
   const mode = useThemeMode()
   const ct = chartTheme(mode)
-  const [view, setView] = useState<View>('Fit')
+  const { view, setView } = p
   const [busy, setBusy] = useState(false)
   const { pair, picker } = useOverlay()
   const { observed: obs, obsTimes: times, start, end, bayes, sim } = p
@@ -415,6 +411,10 @@ function Result(p: FittedProps & { modelKey: string; sim: Record<Series, number[
           title="This model's tables and figures, and the comparison with all models.">
           {busy ? 'Preparing…' : 'Download results (ZIP)'}
         </Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-primary/30 bg-primary-soft/50 px-4 py-3">
+        <Toggle checked={p.bands} onChange={p.setBands} label="Show 95% Bayesian bands (MCMC)"
+          hint="Switches from the least-squares point estimates to the Bayesian posterior: credible and predictive bands, the model at the posterior-mean parameters, and the posterior of every parameter." />
       </div>
       <Segmented value={view} onChange={setView} options={VIEWS.map(v => ({ value: v, label: v }))} />
 

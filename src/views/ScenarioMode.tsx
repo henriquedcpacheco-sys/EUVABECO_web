@@ -42,7 +42,7 @@ const FREE_ZONES = [
 const SCHOOL_CP = FITTED_CP[2], NEXT_CP = FITTED_CP[3], MAX_SCHOOL_DELAY = NEXT_CP - SCHOOL_CP - 1
 const N_BAND_DRAWS = 500
 
-interface Config { model: ScnModel; scn: Scenario; period: [number, number]; bands: boolean }
+interface Config { model: ScnModel; scn: Scenario; period: [number, number] }
 type Traj = Record<Series | 'Rt', number[]>
 interface Saved { name: string; model: ScnModel; scn: Scenario; period: [number, number]; times: number[]; data: Traj }
 
@@ -99,7 +99,6 @@ export default function ScenarioMode() {
   const [reduction, setReduction] = useState(40)
   const [delay, setDelay] = useState(21)
   const [period, setPeriod] = useState<[number, number]>([0, N_DAYS - 1])
-  const [bandsOn, setBandsOn] = useState(false)
   const [config, setConfig] = useState<Config | null>(null)
   const [tab, setTab] = useState<'results' | 'compare'>('results')
   const [saved, setSaved] = useState<Saved[]>(readSaved)
@@ -112,8 +111,7 @@ export default function ScenarioMode() {
   const scn: Scenario = type === 'baseline' ? null
     : type === 'lockdown' ? { kind: 'lockdown', start: startDay, duration: Math.max(duration, 1), reduction }
     : { kind: 'school', delay }
-  const bandsAvailable = model === 'age_point' && scn === null
-  const current: Config = { model, scn, period, bands: bandsAvailable && bandsOn }
+  const current: Config = { model, scn, period }
   const changed = config != null && JSON.stringify(config) !== JSON.stringify(current)
 
   if (!inputs) return <Loading />
@@ -176,9 +174,6 @@ export default function ScenarioMode() {
             <Field label="Period to show">
               <RangeSlider min={0} max={N_DAYS - 1} value={period} onChange={setPeriod} format={d => fmtDate(dayToTime(d))} />
             </Field>
-            <Toggle checked={bandsOn} onChange={setBandsOn} disabled={!bandsAvailable}
-              label={`95% predictive band (${N_BAND_DRAWS} posterior draws)`}
-              hint="Model 3b, baseline only. Integrates 500 posterior draws and adds the fitted observation noise, corrected for residual autocorrelation." />
             <Button variant="primary" icon={Play} className="w-full" onClick={run}>Run scenario simulation</Button>
           </div>
         </Card>
@@ -228,11 +223,17 @@ function Results({ config, changed, inp, saved, onSave }: {
   if (lastTitle.current !== title) { lastTitle.current = title; setName(title) }
 
   const tr = useMemo(() => runScenario(inp, scn), [inp, scn])
+  // The band is switched on from the results, for the fitted Model 3b
+  // baseline only; every new run starts from the point estimates.
+  const bandsAvailable = model === 'age_point' && scn === null
+  const [bandsOn, setBandsOn] = useState(false)
+  useEffect(() => setBandsOn(false), [config])
+  const wantBands = bandsAvailable && bandsOn
   useEffect(() => {
-    if (!config.bands) { setBands(null); return }
+    if (!wantBands) { setBands(null); return }
     setBandsBusy(true)
     getBands().then(b => { setBands(b); setBandsBusy(false) }, () => setBandsBusy(false))
-  }, [config.bands])
+  }, [wantBands])
 
   const times = Array.from({ length: N_DAYS }, (_, d) => dayToTime(d))
   const start = dayToTime(period[0]), end = dayToTime(period[1])
@@ -291,6 +292,14 @@ function Results({ config, changed, inp, saved, onSave }: {
         <Button icon={BookmarkPlus} onClick={save}>Save simulation</Button>
       </div>
 
+      <div className="rounded-xl border border-primary/30 bg-primary-soft/50 px-4 py-3">
+        <Toggle checked={bandsOn} onChange={setBandsOn} disabled={!bandsAvailable}
+          label={`Show 95% Bayesian band (${N_BAND_DRAWS} posterior draws)`}
+          hint={bandsAvailable
+            ? 'Integrates 500 posterior draws of Model 3b and adds the fitted observation noise, corrected for residual autocorrelation.'
+            : 'Available for the Model 3b baseline (no counterfactual scenario).'} />
+      </div>
+
       <Segmented value={view} onChange={setView} options={[
         { value: 'Plots', label: 'Plots' }, { value: 'Epidemic metrics', label: 'Epidemic metrics' }, { value: 'Overlay', label: 'Overlay' },
       ]} />
@@ -305,9 +314,6 @@ function Results({ config, changed, inp, saved, onSave }: {
           ]} />
           {bandsBusy && <p className="text-[13px] text-muted">Integrating {N_BAND_DRAWS} posterior draws…</p>}
           <PanelGrid>{SERIES.map(s => <ChartCard key={s} color={seriesColor(s, mode)}><EChart option={panel(s)} height={250} /></ChartCard>)}</PanelGrid>
-          {model === 'age_point' && !scn && !config.bands && (
-            <p className="text-[12.5px] text-muted">Turn on <strong>95% predictive band</strong> in the setup panel for a band on these plots, from posterior draws.</p>
-          )}
           <Card title="Effective reproduction number Rₜ"><EChart option={panel('Rt')} height={260} /></Card>
         </>}
         {view === 'Epidemic metrics' && <MetricsView m={metrics} />}

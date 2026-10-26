@@ -12,13 +12,15 @@ Pages. Every push to `main` rebuilds and redeploys it
 
 ## Modes
 
-1. **Estimate early dynamics**: the fitted models (1, 2, 3a, 3b), least squares
-   or Bayesian MCMC bands, over the whole of 2020.
+1. **Estimate early dynamics**: the fitted models (1, 2, 3a, 3b) over the whole
+   of 2020. A run shows the least-squares fit; a toggle in the results then
+   switches to the Bayesian MCMC posterior (credible and predictive bands).
 2. **Estimate partial early dynamics**: the same, for a chosen period.
 3. **Transmission scenarios**: an extra lockdown (Rₜ reduction on top of the
    fitted transmission, any start date and duration outside the two real
    lockdowns) or a later school reopening, re-simulated live in the browser;
-   save runs and compare them.
+   save runs and compare them. For the Model 3b baseline, a toggle in the results
+   adds the 95% band from 500 posterior draws.
 4. **Model with vaccination**: not available yet.
 
 ## How it works
