@@ -48,6 +48,14 @@ function base(ct: ChartTheme, title?: string): Option {
   }
 }
 
+/** Zoom and pan on the x axis: Ctrl + scroll (or a trackpad pinch) zooms, a
+ * drag pans, a double-click resets (see EChart). Plain scrolling is left to
+ * the page; the y axis rescales to the data in view. */
+const zoom = (filterMode: 'filter' | 'weakFilter' = 'filter', xAxisIndex = 0) => [{
+  type: 'inside', xAxisIndex, filterMode, zoomOnMouseWheel: 'ctrl', moveOnMouseWheel: false,
+  moveOnMouseMove: true, preventDefaultMouseMove: true,
+}]
+
 const timeAxis = (ct: ChartTheme, start: number, end: number) => ({
   type: 'time', min: start, max: end,
   axisLine: { lineStyle: { color: ct.axis } }, axisTick: { show: false },
@@ -133,6 +141,7 @@ export function timePanel(spec: PanelSpec): Option {
     ...b,
     grid: { left: 8, right: 14, top: spec.title ? 38 : 16, bottom: 6, containLabel: true },
     xAxis: timeAxis(ct, start, end),
+    dataZoom: zoom(),
     yAxis: valueAxis(ct, spec.yDigits, spec.yName),
     series,
     tooltip: {
@@ -172,8 +181,9 @@ export function overlayChart(ct: ChartTheme, start: number, end: number, left: O
   })
   return {
     ...b,
-    grid: { left: 8, right: 8, top: title ? 56 : 36, bottom: 6, containLabel: true },
+    grid: { left: 8, right: 8, top: title ? 84 : 62, bottom: 6, containLabel: true },
     xAxis: timeAxis(ct, start, end),
+    dataZoom: zoom(),
     yAxis: [axis(left, 'left'), axis(right, 'right')],
     series: [line(left, 0), line(right, 1),
       { type: 'line', data: [], ...marks(ct, { start, end, window }) }],
@@ -205,7 +215,7 @@ export function residualChart(ct: ChartTheme, weeks: number[], stacks: { name: s
       return [w, w + 7 * DAY_MS, y0, y1, s.values[i]]
     })
     return {
-      type: 'custom', name: s.name, itemStyle: { color: s.color },
+      type: 'custom', clip: true, name: s.name, itemStyle: { color: s.color },
       encode: { x: [0, 1], y: [2, 3] },
       renderItem: (_: unknown, api: any) => {
         const p0 = api.coord([api.value(0), api.value(2)]), p1 = api.coord([api.value(1), api.value(3)])
@@ -221,6 +231,7 @@ export function residualChart(ct: ChartTheme, weeks: number[], stacks: { name: s
       textStyle: { color: ct.text, fontSize: 12 } },
     grid: { left: 8, right: 14, top: title ? 64 : 36, bottom: 6, containLabel: true },
     xAxis: timeAxis(ct, start, end),
+    dataZoom: zoom('weakFilter'),
     yAxis: valueAxis(ct, 0),
     series: [...series, { type: 'line', data: [], ...marks(ct, { start, end }) }],
     tooltip: {
@@ -239,12 +250,13 @@ export function histogramChart(ct: ChartTheme, title: string, edges: number[], c
   return {
     ...b,
     grid: { left: 6, right: 10, top: 32, bottom: 4, containLabel: true },
+    dataZoom: zoom('weakFilter'),
     xAxis: { type: 'value', min: xmin, max: xmax, splitNumber: 3, axisLine: { lineStyle: { color: ct.axis } },
       axisTick: { show: false }, splitLine: { show: false },
       axisLabel: { color: ct.muted, fontSize: 10, hideOverlap: true, formatter: (v: number) => compact(v) } },
     yAxis: { type: 'value', show: false },
     series: [{
-      type: 'custom', name: title, itemStyle: { color: ct.obs },
+      type: 'custom', clip: true, name: title, itemStyle: { color: ct.obs },
       encode: { x: [0, 1], y: 2 },
       renderItem: (_: unknown, api: any) => {
         const p0 = api.coord([api.value(0), 0]), p1 = api.coord([api.value(1), api.value(2)])
@@ -277,6 +289,7 @@ export function compareChart(ct: ChartTheme, items: { name: string; times: numbe
       textStyle: { color: ct.text, fontSize: 12 } },
     grid: { left: 8, right: 14, top: title ? 40 : 24, bottom: 14 + 20 * items.length, containLabel: true },
     xAxis: timeAxis(ct, start, end),
+    dataZoom: zoom(),
     yAxis: valueAxis(ct, isRt ? 1 : undefined, yName),
     series: [
       ...items.map((s, k) => ({

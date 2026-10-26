@@ -1,4 +1,5 @@
 import { useEffect, useId, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, X, type LucideIcon } from 'lucide-react'
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ')
@@ -320,7 +321,9 @@ export function Modal({ open, onClose, title, children, wide = false }: {
     return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = '' }
   }, [open, onClose])
   if (!open) return null
-  return (
+  // Rendered at the end of <body>: an animated (transformed) ancestor would
+  // otherwise confine the fixed overlay to its own box.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/45 p-4 backdrop-blur-[2px] sm:p-8" onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}
         className={cx('animate-in w-full rounded-2xl border border-line bg-surface shadow-pop', wide ? 'max-w-5xl' : 'max-w-2xl')}>
@@ -332,7 +335,8 @@ export function Modal({ open, onClose, title, children, wide = false }: {
         </div>
         <div className="px-6 py-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

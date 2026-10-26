@@ -1,13 +1,17 @@
 import { useState, type ReactNode } from 'react'
 import { CalendarDays, HeartPulse, TrendingUp, Users } from 'lucide-react'
 import { DataTable, Field, Metric, Segmented, Select } from '../components/ui'
+import { ZOOM_HINT } from '../components/EChart'
 import { SERIES, SERIES_COLORS, SERIES_COLORS_DARK_MODE, SERIES_LABELS, type Series } from '../lib/model'
 import { fmtDate, fmtInt, fmtNum } from '../lib/format'
 
 export function PanelGrid({ children, cols = 2 }: { children: ReactNode; cols?: 2 | 4 }) {
   return (
-    <div className={cols === 4 ? 'grid gap-3 sm:grid-cols-2 xl:grid-cols-4' : 'grid gap-4 lg:grid-cols-2'}>
-      {children}
+    <div className="space-y-2">
+      <div className={cols === 4 ? 'grid gap-3 sm:grid-cols-2 xl:grid-cols-4' : 'grid gap-4 lg:grid-cols-2'}>
+        {children}
+      </div>
+      <p className="text-[12.5px] text-muted">{ZOOM_HINT} Use <strong>Enlarge</strong> on a plot to see it bigger.</p>
     </div>
   )
 }
